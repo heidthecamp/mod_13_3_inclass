@@ -23,7 +23,7 @@ def preprocess_data(letter_df):
     y = le.transform(y)
 
     print(X.head())
-    print(y.head())
+    print(y)
 
     return train_test_split(X, y)
 
@@ -55,25 +55,17 @@ def get_best_pipeline(pipeline1, pipeline2, letter_df):
     pipelines, then evaluates which pipeline performs
     best.
     """
+    p1 = pipeline1[0]
+    p2 = pipeline2[0]
     X_train, X_test, y_train, y_test = preprocess_data(letter_df)
-    pipeline1.fit(X_train, y_train)
-    pipeline2.fit(X_train, y_train)
-    print("Pipeline 1:")
-    check_metrics(X_test, y_test, pipeline1)
-    print("Pipeline 2:")
-    check_metrics(X_test, y_test, pipeline2)
-    return pipeline1 if check_metrics(X_test, y_test, pipeline1) > check_metrics(X_test, y_test, pipeline2) else pipeline2
+    p1.fit(X_train, y_train)
+    p2.fit(X_train, y_train)
+    return pipeline1 if check_metrics(X_test, y_test, p1) > check_metrics(X_test, y_test, p2) else pipeline2
 
 def model_generator(letter_df):
     """
     Generates a pipeline for a linear regression model.
     """
-    # return Pipeline([
-    #     ('scaler', StandardScaler()),
-    #     ('one_hot', OneHotEncoder(handle_unknown='ignore',
-    #                             sparse_output=False)),
-    # ])
-
     steps = [
         ('scaler', StandardScaler()),
         ('one_hot', OneHotEncoder(handle_unknown='ignore',
@@ -81,52 +73,27 @@ def model_generator(letter_df):
             sparse_output=False)),
     ]
 
-    # pipelines = [] 
-
-    # pipelines.append([Pipeline(steps.copy()), 'Logistic Regression'])
-    # pipelines[-1].steps.append(('model', LogisticRegression()))
-    # pipelines.append([Pipeline(steps.copy()), ])
-    # pipelines[-1].steps.append(('model', SVC(kernel='linear')))
-    # # pipelines.append(Pipeline(steps.copy()))
-    # # pipelines[-1].steps.append(('model', KNeighborsClassifier()))
-    # pipelines.append(Pipeline(steps.copy()))
-    # pipelines[-1].steps.append(('model', DecisionTreeClassifier()))
-    # pipelines.append(Pipeline(steps.copy()))
-    # pipelines[-1].steps.append(('model', RandomForestClassifier()))
-    # pipelines.append(Pipeline(steps.copy()))
-    # pipelines[-1].steps.append(('model', XGBClassifier()))
-
-    pipeline1 = Pipeline(steps.copy())
-    pipeline2 = Pipeline(steps.copy())
-    # pipeline3 = Pipeline(steps.copy())
-    pipeline4 = Pipeline(steps.copy())
-    pipeline5 = Pipeline(steps.copy())
-    pipeline6 = Pipeline(steps.copy())
-
-    pipeline1.steps.append(('model', LogisticRegression()))
-    pipeline2.steps.append(('model', SVC(kernel='linear')))
-    # pipeline3.steps.append(('model', KNeighborsClassifier()))
-    pipeline4.steps.append(('model', DecisionTreeClassifier()))
-    pipeline5.steps.append(('model', RandomForestClassifier()))
-    pipeline6.steps.append(('model', XGBClassifier()))          
+    pipelines = [] 
+    pipelines.append([Pipeline(steps.copy() + [('model', LogisticRegression())]), 'Logistic Regression'])
+    pipelines.append([Pipeline(steps.copy() + [('model', SVC(kernel='linear'))]), 'SVC'])
+    pipelines.append([Pipeline(steps.copy() + [('model', KNeighborsClassifier())]), 'KNeighborsClassifier'])
+    pipelines.append([Pipeline(steps.copy() + [('model', DecisionTreeClassifier())]), 'DecisionTreeClassifier'])
+    pipelines.append([Pipeline(steps.copy() + [('model', RandomForestClassifier())]), 'RandomForestClassifier'])
+    pipelines.append([Pipeline(steps.copy() + [('model', XGBClassifier())]), 'XGBClassifier'])
 
     best = None
 
-    best = get_best_pipeline(pipeline1, pipeline2, letter_df)
-    # best = get_best_pipeline(best, pipeline3, letter_df)
-    best = get_best_pipeline(best, pipeline4, letter_df)
-    best = get_best_pipeline(best, pipeline5, letter_df)
-    best = get_best_pipeline(best, pipeline6, letter_df)
+    for pipeline in pipelines:
 
-    # for pipeline in pipelines:
-
-    #     if best is None:
-    #         best = pipeline
-    #         continue
-    #     else:
-    #         best = get_best_pipeline(best, pipeline, letter_df)
-
-    return best
+        if best is None:
+            best = pipeline
+            continue
+        else:
+            print(f"{best[1]} vs {pipeline[1]}")
+            best = get_best_pipeline(best, pipeline, letter_df)
 
 
+    print(f"Best pipeline: {best[1]}")
+
+    return best[0]
 
